@@ -41,9 +41,10 @@ a:hover{color:var(--copper)}
 /* Hero */
 .hero{position:relative;overflow:hidden;min-height:min(86vh,46rem);display:flex;align-items:flex-end;border-bottom:1px solid var(--rule)}
 .contours{position:absolute;inset:0;width:100%;height:100%}
-.contours path{fill:none;stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke;stroke-linecap:round;opacity:0}
-.contours path.idx{stroke:var(--index);stroke-width:1.6}
-.is-ready .contours path{opacity:1;transition:opacity .9s ease;transition-delay:calc(var(--i) * 85ms)}
+.contours .lvl{opacity:0}
+.contours .lvl text{fill:var(--verd);opacity:.6;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace}
+.contours .lvl.idx text{fill:var(--copper);opacity:.95;font-weight:700}
+.is-ready .contours .lvl{opacity:1;transition:opacity .9s ease;transition-delay:calc(var(--i) * 85ms)}
 .contours .flow{fill:none;stroke:var(--copper);stroke-width:.24;vector-effect:none;opacity:1;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1}
 .is-ready .contours .flow{stroke-dashoffset:0;transition:stroke-dashoffset 2.4s cubic-bezier(.5,0,.2,1) 1.9s}
 .nodes circle{fill:var(--verd);opacity:0}
@@ -105,6 +106,8 @@ h3.sub{margin:0 0 .8rem}
 footer{max-width:62rem;margin:0 auto;padding:2rem 1.25rem 3rem;color:var(--muted);font-size:.9rem}
 
 @media (max-width:760px){
+  .contours .lvl text{opacity:.4}
+  .contours .lvl.idx text{opacity:.7}
   section{grid-template-columns:1fr;padding:3rem 0}
   h2{position:static}
   .skills{grid-template-columns:1fr}
@@ -112,7 +115,7 @@ footer{max-width:62rem;margin:0 auto;padding:2rem 1.25rem 3rem;color:var(--muted
   .hero::after{background:linear-gradient(to top,var(--paper) 0%,transparent 50%),linear-gradient(to right,color-mix(in srgb,var(--paper) 78%,transparent) 0%,transparent 95%)}
 }
 @media (prefers-reduced-motion:reduce){
-  .contours path,.nodes circle{opacity:1!important;transition:none!important}
+  .contours .lvl,.nodes circle{opacity:1!important;transition:none!important}
   .flow{stroke-dashoffset:0!important;transition:none!important}
 }
 @media print{

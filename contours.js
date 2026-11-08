@@ -30,7 +30,7 @@
   }
   for(gy=0;gy<=H;gy++){for(gx=0;gx<=W;gx++){f[gy][gx]/=max;}}
 
-  // 3. Isolines by marching squares.
+  // 3. Isolines by marching squares, stitched into continuous lines.
   var SEG=[[],[[3,2]],[[2,1]],[[3,1]],[[0,1]],[[3,0],[2,1]],[[0,2]],[[3,0]],[[3,0]],[[0,2]],[[3,2],[0,1]],[[0,1]],[[3,1]],[[2,1]],[[3,2]],[]];
   function pt(e,x,y,tl,tr,br,bl,L){
     var t;
@@ -39,22 +39,62 @@
     if(e===2){t=(L-bl)/(br-bl);return (x+t).toFixed(2)+' '+(y+1);}
     t=(L-tl)/(bl-tl);return x+' '+(y+t).toFixed(2);
   }
-  var n=0,L,d,c,k,s,tl,tr,br,bl,p;
+  function stitch(segs){
+    var adj={},used=[],lines=[],i,j,cur,s,line;
+    for(i=0;i<segs.length;i++){
+      (adj[segs[i][0]]=adj[segs[i][0]]||[]).push(i);
+      (adj[segs[i][1]]=adj[segs[i][1]]||[]).push(i);
+    }
+    function free(key){var l=adj[key]||[],k;for(k=0;k<l.length;k++){if(!used[l[k]]){return l[k];}}return -1;}
+    for(i=0;i<segs.length;i++){
+      if(used[i]){continue;}
+      used[i]=true;line=[segs[i][0],segs[i][1]];
+      cur=line[line.length-1];
+      while((j=free(cur))>=0){used[j]=true;s=segs[j];cur=(s[0]===cur)?s[1]:s[0];line.push(cur);}
+      cur=line[0];
+      while((j=free(cur))>=0){used[j]=true;s=segs[j];cur=(s[0]===cur)?s[1]:s[0];line.unshift(cur);}
+      lines.push(line);
+    }
+    return lines;
+  }
+  function xy(key){var q=key.split(' ');return [parseFloat(q[0]),parseFloat(q[1])];}
+
+  // Each isoline is written as binary digits that follow the curve.
+  var FS=0.95,SP=0.4,ADV=FS*0.6+SP;
+  var n=0,L,segs,lines,c,k,s,tl,tr,br,bl,g,li,ln,len,a0,a1,q,bits,id,pathEl,txt,tp,m2;
   for(L=0.06;L<0.99;L+=0.0625){
-    d='';
+    segs=[];
     for(gy=0;gy<H;gy++){
       for(gx=0;gx<W;gx++){
         tl=f[gy][gx];tr=f[gy][gx+1];br=f[gy+1][gx+1];bl=f[gy+1][gx];
         c=(tl>L?8:0)+(tr>L?4:0)+(br>L?2:0)+(bl>L?1:0);
         s=SEG[c];
-        for(k=0;k<s.length;k++){d+='M'+pt(s[k][0],gx,gy,tl,tr,br,bl,L)+'L'+pt(s[k][1],gx,gy,tl,tr,br,bl,L);}
+        for(k=0;k<s.length;k++){segs.push([pt(s[k][0],gx,gy,tl,tr,br,bl,L),pt(s[k][1],gx,gy,tl,tr,br,bl,L)]);}
       }
     }
-    if(!d){continue;}
-    p=el('path',{d:d});
-    if(n%5===4){p.setAttribute('class','idx');}
-    p.style.setProperty('--i',n);
-    svg.appendChild(p);
+    if(!segs.length){continue;}
+    lines=stitch(segs);
+    g=el('g',{'class':n%5===4?'lvl idx':'lvl'});
+    g.style.setProperty('--i',n);
+    for(li=0;li<lines.length;li++){
+      ln=lines[li];
+      a0=xy(ln[0]);a1=xy(ln[ln.length-1]);
+      if(a0[0]>a1[0]){ln.reverse();}          // read left to right
+      len=0;
+      for(m2=1;m2<ln.length;m2++){q=xy(ln[m2]);a0=xy(ln[m2-1]);len+=Math.sqrt((q[0]-a0[0])*(q[0]-a0[0])+(q[1]-a0[1])*(q[1]-a0[1]));}
+      if(len<4){continue;}
+      id='c'+n+'-'+li;
+      pathEl=el('path',{id:id,d:'M'+ln.join('L'),fill:'none',stroke:'none'});
+      g.appendChild(pathEl);
+      bits='';
+      for(m2=0;m2<Math.floor(len/ADV*1.08)+1;m2++){bits+=rand()>0.5?'1':'0';}
+      txt=el('text',{'font-size':FS,'letter-spacing':SP});
+      tp=el('textPath',{href:'#'+id});
+      tp.textContent=bits;
+      txt.appendChild(tp);
+      g.appendChild(txt);
+    }
+    svg.appendChild(g);
     n++;
   }
 
